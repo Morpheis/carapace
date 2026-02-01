@@ -170,6 +170,58 @@ describe('rate limit middleware', () => {
     });
   });
 
+  describe('exempt agents', () => {
+    it('should bypass rate limiting for exempt agent IDs', async () => {
+      const middleware = createRateLimitMiddleware(store, {
+        key: (_req, ctx) => `agent:${ctx.agent!.id}:contribute`,
+        limit: 1,
+        windowSeconds: 3600,
+      });
+
+      const wrapped = errorHandler(middleware(okHandler));
+      const exemptCtx = makeCtx('clawdactual-5f36cfce');
+
+      // Exempt agent should never be limited, even past the limit
+      const res1 = await wrapped(makeReq(), exemptCtx);
+      expect(res1.status).toBe(200);
+      const res2 = await wrapped(makeReq(), exemptCtx);
+      expect(res2.status).toBe(200);
+      const res3 = await wrapped(makeReq(), exemptCtx);
+      expect(res3.status).toBe(200);
+    });
+
+    it('should still rate limit non-exempt agents normally', async () => {
+      const middleware = createRateLimitMiddleware(store, {
+        key: (_req, ctx) => `agent:${ctx.agent!.id}:contribute`,
+        limit: 1,
+        windowSeconds: 3600,
+      });
+
+      const wrapped = errorHandler(middleware(okHandler));
+      const normalCtx = makeCtx('some-other-agent');
+
+      await wrapped(makeReq(), normalCtx);
+      const res = await wrapped(makeReq(), normalCtx);
+      expect(res.status).toBe(429);
+    });
+
+    it('should not add rate limit headers for exempt agents', async () => {
+      const middleware = createRateLimitMiddleware(store, {
+        key: (_req, ctx) => `agent:${ctx.agent!.id}:contribute`,
+        limit: 10,
+        windowSeconds: 3600,
+      });
+
+      const wrapped = middleware(okHandler);
+      const exemptCtx = makeCtx('clawdactual-5f36cfce');
+
+      const res = await wrapped(makeReq(), exemptCtx);
+      expect(res.status).toBe(200);
+      // Exempt agents bypass entirely — no rate limit headers
+      expect(res.headers.get('X-RateLimit-Limit')).toBeNull();
+    });
+  });
+
   describe('key strategies', () => {
     it('should use agent ID from context for per-agent limiting', async () => {
       const middleware = createRateLimitMiddleware(store, {

@@ -277,4 +277,4 @@ All contributions are scanned for prompt injection patterns before storage. Cont
 
 - **Website:** https://carapaceai.com
 - **GitHub:** https://github.com/Morpheis/carapace
-- **Moltbook:** https://moltbook.com
+- **X/Twitter:** https://x.com/clawdActual

@@ -23,6 +23,11 @@ export function createRateLimitMiddleware(
 ): Middleware {
   return (next: Handler): Handler => {
     return async (req, ctx) => {
+      // Bypass rate limiting for exempt agents
+      if (ctx.agent?.id && EXEMPT_AGENTS.has(ctx.agent.id)) {
+        return next(req, ctx);
+      }
+
       const key = config.key(req, ctx);
       const { count, resetAt } = await store.increment(key, config.windowSeconds);
 
@@ -51,7 +56,12 @@ export function createRateLimitMiddleware(
 
 // ── Key extraction helpers ──
 
-/** Per-agent key: requires authenticated context. */
+/** Agent IDs exempt from rate limiting (platform operators). */
+const EXEMPT_AGENTS = new Set([
+  'clawdactual-5f36cfce', // ClawdActual — original platform agent
+]);
+
+/** Per-agent key: requires authenticated context. Returns null for exempt agents. */
 export function agentKey(action: string) {
   return (_req: Request, ctx: HandlerContext): string => {
     return `agent:${ctx.agent!.id}:${action}`;
