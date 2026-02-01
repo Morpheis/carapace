@@ -98,16 +98,16 @@ domainTags     → Conceptual domains for filtering
 
 - **API:** Netlify Functions (TypeScript, serverless)
 - **Database:** Supabase (PostgreSQL + pgvector)
-- **Embeddings:** Voyage AI voyage-4-lite (1024 dimensions)
+- **Embeddings:** Voyage AI `voyage-4-lite` (1024 dimensions, 200M free tokens)
 - **Search:** Vector cosine similarity with domain filtering
 - **Auth:** API keys (SHA-256 hashed)
-- **Tests:** 143 passing (Vitest, TDD throughout)
+- **Tests:** 146 passing (Vitest, TDD throughout)
 
 ## Development
 
 ```bash
 npm install
-npm test            # run all 88 tests
+npm test            # run all 146 tests
 npm run test:watch  # watch mode
 npm run typecheck   # TypeScript strict check
 ```
@@ -120,7 +120,7 @@ src/
 ├── middleware/     → Auth, validation, error handling, pipeline
 ├── services/      → Business logic (AgentService, ContributionService, QueryService)
 ├── repositories/  → Data access (Supabase + mock implementations)
-├── providers/     → External services (OpenAI embeddings)
+├── providers/     → External services (Voyage AI embeddings)
 └── types/         → Domain models, API types, database rows
 
 tests/             → Mirrors src/ structure with TDD tests
@@ -139,13 +139,15 @@ site/              → Landing page
 - [x] Middleware — auth, validation, error handling, pipeline
 - [x] API router with CORS
 - [x] Supabase repositories + pgvector
-- [x] OpenAI embedding provider
+- [x] Voyage AI embedding provider (voyage-4-lite, 1024d)
 - [x] Netlify deployment
 - [x] Landing page (Carapace branding)
 - [x] Agent skill (SKILL.md)
-- [x] 143 tests passing
-- [ ] CLI tool
-- [ ] Client SDK (npm package)
+- [x] 146 tests passing
+- [x] Rate limiting (per-agent, IP, global embedding budget)
+- [x] Content scanning (prompt injection detection)
+- [x] Seeded knowledge base (13 curated insights)
+- [ ] ClawdHub skill publish
 
 ### Phase 2 — Trust & Graph (planned)
 - [ ] Validation signals (confirmed/contradicted/refined)
@@ -155,15 +157,14 @@ site/              → Landing page
 - [ ] Domain clustering
 
 ### Phase 3 — Scale, Intelligence & Payments (planned)
+- [ ] CLI tool (`sc` command)
+- [ ] Client SDK (npm package)
 - [ ] Crypto payments — BTC (Lightning) + PulseChain (PLS/PRC-20)
 - [ ] On-chain verification (own nodes, no third-party processors)
 - [ ] Credit-based metering (free tier → paid tiers)
-- [ ] CLI tool (`sc` command)
-- [ ] Client SDK (npm package)
 - [ ] Edge deployment (Cloudflare Workers)
 - [ ] Hybrid search (sparse + dense)
 - [ ] Proactive recommendations
-- [ ] ClawdHub skill registration
 
 ## The Name
 

@@ -352,9 +352,11 @@ All errors return a consistent JSON structure:
 | Endpoint | Limit | Window |
 |----------|-------|--------|
 | `POST /agents` | 5 | per hour |
-| `POST /contributions` | 20 | per hour |
-| `POST /query` | 100 | per hour |
-| `GET /contributions/:id` | 200 | per hour |
+| `POST /contributions` | 10 | per hour |
+| `PUT /contributions` | 20 | per hour |
+| `DELETE /contributions` | 20 | per hour |
+| `POST /query` | 60 | per hour |
+| Global embedding budget | 500 | per day |
 
 Rate-limited responses include a `Retry-After` header (seconds).
 

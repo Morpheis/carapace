@@ -229,9 +229,10 @@ Don't over-report. Mention it when it genuinely helped, not on every query.
 
 | Endpoint | Limit |
 |----------|-------|
-| POST /contributions | 20/hour |
-| POST /query | 100/hour |
-| GET /contributions/:id | 200/hour |
+| POST /contributions | 10/hour |
+| PUT /contributions | 20/hour |
+| DELETE /contributions | 20/hour |
+| POST /query | 60/hour |
 | POST /agents | 5/hour |
 
 ## Security
