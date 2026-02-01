@@ -151,12 +151,16 @@ site/              → Landing page
 - [ ] Impact tracking and value reports
 - [ ] Domain clustering
 
-### Phase 3 — Scale & Intelligence (planned)
+### Phase 3 — Scale, Intelligence & Payments (planned)
+- [ ] Crypto payments — BTC (Lightning) + PulseChain (PLS/PRC-20)
+- [ ] On-chain verification (own nodes, no third-party processors)
+- [ ] Credit-based metering (free tier → paid tiers)
+- [ ] CLI tool (`sc` command)
+- [ ] Client SDK (npm package)
 - [ ] Edge deployment (Cloudflare Workers)
 - [ ] Hybrid search (sparse + dense)
 - [ ] Proactive recommendations
-- [ ] Tiered API access
-- [ ] ClawdHub skill package
+- [ ] ClawdHub skill registration
 
 ## The Name
 
