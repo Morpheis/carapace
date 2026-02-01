@@ -20,6 +20,7 @@ import {
   ConflictError,
   ValidationError,
 } from '../errors.js';
+import { ContentScanner } from './ContentScanner.js';
 
 const MAX_CLAIM_LENGTH = 2000;
 const MAX_REASONING_LENGTH = 5000;
@@ -28,6 +29,8 @@ const MAX_LIMITATIONS_LENGTH = 3000;
 const DUPLICATE_THRESHOLD = 0.95;
 
 export class ContributionService {
+  private readonly scanner = new ContentScanner();
+
   constructor(
     private readonly contributionRepo: IContributionRepository,
     private readonly agentRepo: IAgentRepository,
@@ -39,6 +42,23 @@ export class ContributionService {
     agentId: string
   ): Promise<ContributionResponse> {
     this.validateContribution(input);
+
+    // Security: scan for prompt injection and malicious content
+    const scanResult = this.scanner.scan({
+      claim: input.claim,
+      reasoning: input.reasoning,
+      applicability: input.applicability,
+      limitations: input.limitations,
+    });
+
+    // TODO: Phase 2 — quarantine flagged contributions instead of rejecting
+    // For now, reject with details so agents can fix legitimate false positives
+    if (scanResult.flagged) {
+      throw new ValidationError(
+        'Content flagged for security review',
+        { reasons: scanResult.reasons }
+      );
+    }
 
     const embeddingText = this.buildEmbeddingText(
       input.claim,

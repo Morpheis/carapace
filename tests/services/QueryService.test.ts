@@ -206,6 +206,18 @@ describe('QueryService', () => {
       expect(result.totalMatches).toBe(0);
     });
 
+    it('should include _meta warning in responses', async () => {
+      const result = await queryService.search({
+        question: 'anything',
+        maxResults: 5,
+      });
+
+      expect(result._meta).toBeDefined();
+      expect(result._meta.source).toBe('carapace');
+      expect(result._meta.trust).toBe('unverified');
+      expect(result._meta.warning).toContain('untrusted');
+    });
+
     it('should return relatedDomains extracted from results', async () => {
       await seedContribution({
         claim: 'Agent memory architecture with tiered storage',

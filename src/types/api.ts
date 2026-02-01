@@ -93,7 +93,14 @@ export interface ValueSignal {
   mentionWorthy: boolean;
 }
 
+export interface QueryResponseMeta {
+  source: string;
+  trust: string;
+  warning: string;
+}
+
 export interface QueryResponse {
+  _meta: QueryResponseMeta;
   results: ScoredContribution[];
   relatedDomains: string[];
   totalMatches: number;
