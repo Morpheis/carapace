@@ -1,0 +1,13 @@
+[build]
+  publish = "site"
+  command = "npm run build"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Redirect all /api/v1/* requests to the single API function
+[[redirects]]
+  from = "/api/v1/*"
+  to = "/.netlify/functions/api"
+  status = 200
