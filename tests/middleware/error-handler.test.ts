@@ -30,7 +30,7 @@ describe('errorHandler', () => {
     };
 
     const res = await errorHandler(handler)(req, ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(404);
     expect(body.error.code).toBe('NOT_FOUND');
@@ -43,7 +43,7 @@ describe('errorHandler', () => {
     };
 
     const res = await errorHandler(handler)(req, ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');
@@ -55,7 +55,7 @@ describe('errorHandler', () => {
     };
 
     const res = await errorHandler(handler)(req, ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(400);
     expect(body.error.code).toBe('INVALID_REQUEST');
@@ -68,7 +68,7 @@ describe('errorHandler', () => {
     };
 
     const res = await errorHandler(handler)(req, ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(429);
     expect(body.error.code).toBe('RATE_LIMITED');
@@ -84,7 +84,7 @@ describe('errorHandler', () => {
     };
 
     const res = await errorHandler(handler)(req, ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(409);
     expect(body.error.code).toBe('DUPLICATE_CONTRIBUTION');
@@ -97,7 +97,7 @@ describe('errorHandler', () => {
     };
 
     const res = await errorHandler(handler)(req, ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(500);
     expect(body.error.code).toBe('INTERNAL_ERROR');

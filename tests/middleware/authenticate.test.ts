@@ -47,7 +47,7 @@ describe('authenticate middleware', () => {
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as any;
     expect(body.agentId).toBeTruthy();
     expect(body.displayName).toBe('TestAgent');
   });
@@ -55,7 +55,7 @@ describe('authenticate middleware', () => {
   it('should return 401 when no Authorization header', async () => {
     const wrapped = authenticate(echoHandler);
     const res = await wrapped(makeReq(), { agent: null });
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(401);
     expect(body.error.code).toBe('UNAUTHORIZED');

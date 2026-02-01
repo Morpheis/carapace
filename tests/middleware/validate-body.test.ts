@@ -46,7 +46,7 @@ describe('validateBody', () => {
   it('should reject missing required field', async () => {
     const wrapped = validateBody(schema)(echoHandler);
     const res = await wrapped(makeReq({ age: 25 }), ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(400);
     expect(body.error.code).toBe('INVALID_REQUEST');
@@ -56,7 +56,7 @@ describe('validateBody', () => {
   it('should reject wrong type', async () => {
     const wrapped = validateBody(schema)(echoHandler);
     const res = await wrapped(makeReq({ name: 123 }), ctx);
-    const body = await res.json();
+    const body = await res.json() as any;
 
     expect(res.status).toBe(400);
     expect(body.error.code).toBe('INVALID_REQUEST');
