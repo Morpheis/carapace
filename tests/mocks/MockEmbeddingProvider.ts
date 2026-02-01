@@ -7,7 +7,7 @@
 import type { IEmbeddingProvider } from '../../src/providers/IEmbeddingProvider.js';
 
 export class MockEmbeddingProvider implements IEmbeddingProvider {
-  readonly dimensions = 8; // small for testing
+  readonly dimensions = 64; // enough dimensions for meaningful separation in tests
   public callCount = 0;
 
   async generate(text: string): Promise<number[]> {
