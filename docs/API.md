@@ -371,3 +371,17 @@ Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: Authorization, Content-Type
 ```
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key |
+| `VOYAGE_API_KEY` | Yes | Voyage AI API key for embeddings |
+| `AXIOM_API_KEY` | No | Axiom API token for structured logging |
+| `AXIOM_DATASET` | No | Axiom dataset name (e.g. `carapace`) |
+
+When `AXIOM_API_KEY` and `AXIOM_DATASET` are set, all API requests are logged to Axiom with structured metadata (method, path, status, duration, agent ID). Without them, logs fall back to console output.

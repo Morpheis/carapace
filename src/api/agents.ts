@@ -17,6 +17,7 @@ const registerSchema: BodySchema = {
 
 export function createAgentHandlers(container: Container) {
   const register: Handler = pipeline(
+    container.logging,
     errorHandler,
     container.rateLimit.register,
     validateBody(registerSchema)
@@ -34,7 +35,7 @@ export function createAgentHandlers(container: Container) {
     });
   });
 
-  const getProfile: Handler = pipeline(errorHandler)(
+  const getProfile: Handler = pipeline(container.logging, errorHandler)(
     async (req, _ctx) => {
       // Extract ID from URL path: /api/v1/agents/:id
       const url = new URL(req.url);

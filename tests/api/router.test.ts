@@ -6,6 +6,7 @@ import { MockContributionRepository } from '../mocks/MockContributionRepository.
 import { MockEmbeddingProvider } from '../mocks/MockEmbeddingProvider.js';
 import { InMemoryRateLimitStore } from '../../src/stores/InMemoryRateLimitStore.js';
 import { InMemoryCounterStore } from '../../src/stores/InMemoryCounterStore.js';
+import { ConsoleLogProvider } from '../../src/providers/ConsoleLogProvider.js';
 import type { HandlerContext } from '../../src/middleware/pipeline.js';
 
 describe('API Router', () => {
@@ -48,6 +49,7 @@ describe('API Router', () => {
       agentRepo: new MockAgentRepository(),
       contributionRepo: new MockContributionRepository(),
       embeddingProvider: new MockEmbeddingProvider(),
+      logProvider: new ConsoleLogProvider(),
       rateLimitStore: new InMemoryRateLimitStore(),
       counterStore: new InMemoryCounterStore(),
     });

@@ -8,6 +8,8 @@ import { getSupabaseClient } from './db.js';
 import { SupabaseAgentRepository } from './repositories/SupabaseAgentRepository.js';
 import { SupabaseContributionRepository } from './repositories/SupabaseContributionRepository.js';
 import { VoyageEmbeddingProvider } from './providers/VoyageEmbeddingProvider.js';
+import { AxiomLogProvider } from './providers/AxiomLogProvider.js';
+import { ConsoleLogProvider } from './providers/ConsoleLogProvider.js';
 import { SupabaseRateLimitStore } from './stores/SupabaseRateLimitStore.js';
 import { SupabaseCounterStore } from './stores/SupabaseCounterStore.js';
 
@@ -27,10 +29,20 @@ export function getProductionContainer(): Container {
 
   const db = getSupabaseClient();
 
+  // Axiom logging: uses AxiomLogProvider when configured, falls back to console.
+  const hasAxiom = process.env.AXIOM_API_KEY && process.env.AXIOM_DATASET;
+  const logProvider = hasAxiom
+    ? new AxiomLogProvider({
+        apiToken: process.env.AXIOM_API_KEY!,
+        dataset: process.env.AXIOM_DATASET!,
+      })
+    : new ConsoleLogProvider({ outputToConsole: true });
+
   cached = createContainer({
     agentRepo: new SupabaseAgentRepository(db),
     contributionRepo: new SupabaseContributionRepository(db),
     embeddingProvider: new VoyageEmbeddingProvider(),
+    logProvider,
     rateLimitStore: new SupabaseRateLimitStore(db),
     counterStore: new SupabaseCounterStore(db),
   });

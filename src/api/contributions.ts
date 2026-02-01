@@ -32,6 +32,7 @@ const updateSchema: BodySchema = {
 
 export function createContributionHandlers(container: Container) {
   const create: Handler = pipeline(
+    container.logging,
     errorHandler,
     container.authenticate,
     container.rateLimit.createContribution,
@@ -58,7 +59,7 @@ export function createContributionHandlers(container: Container) {
     });
   });
 
-  const getById: Handler = pipeline(errorHandler)(async (req, _ctx) => {
+  const getById: Handler = pipeline(container.logging, errorHandler)(async (req, _ctx) => {
     const url = new URL(req.url);
     const parts = url.pathname.split('/');
     const id = parts[parts.length - 1];
@@ -72,6 +73,7 @@ export function createContributionHandlers(container: Container) {
   });
 
   const update: Handler = pipeline(
+    container.logging,
     errorHandler,
     container.authenticate,
     container.rateLimit.updateContribution,
@@ -104,6 +106,7 @@ export function createContributionHandlers(container: Container) {
   });
 
   const del: Handler = pipeline(
+    container.logging,
     errorHandler,
     container.authenticate,
     container.rateLimit.deleteContribution

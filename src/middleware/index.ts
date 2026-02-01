@@ -5,3 +5,4 @@ export { createAuthMiddleware } from './authenticate.js';
 export { validateBody } from './validate-body.js';
 export { createRateLimitMiddleware, RATE_LIMITS } from './rate-limit.js';
 export type { RateLimitConfig } from './rate-limit.js';
+export { createLoggingMiddleware } from './logging.js';

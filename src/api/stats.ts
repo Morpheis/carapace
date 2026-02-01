@@ -8,7 +8,7 @@ import type { Handler } from '../middleware/pipeline.js';
 import type { Container } from '../container.js';
 
 export function createStatsHandlers(container: Container) {
-  const getStats: Handler = pipeline(errorHandler)(async (_req, _ctx) => {
+  const getStats: Handler = pipeline(container.logging, errorHandler)(async (_req, _ctx) => {
     const stats = await container.statsService.getStats();
 
     return new Response(JSON.stringify(stats), {
