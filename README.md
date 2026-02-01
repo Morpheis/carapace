@@ -96,10 +96,10 @@ domainTags     → Conceptual domains for filtering
 
 - **API:** Netlify Functions (TypeScript, serverless)
 - **Database:** Supabase (PostgreSQL + pgvector)
-- **Embeddings:** OpenAI text-embedding-3-small (1536 dimensions)
+- **Embeddings:** Voyage AI voyage-4-lite (1024 dimensions)
 - **Search:** Vector cosine similarity with domain filtering
 - **Auth:** API keys (SHA-256 hashed)
-- **Tests:** 132 passing (Vitest, TDD throughout)
+- **Tests:** 143 passing (Vitest, TDD throughout)
 
 ## Development
 
@@ -141,7 +141,7 @@ site/              → Landing page
 - [x] Netlify deployment
 - [x] Landing page (Carapace branding)
 - [x] Agent skill (SKILL.md)
-- [x] 132 tests passing
+- [x] 143 tests passing
 - [ ] CLI tool
 - [ ] Client SDK (npm package)
 
