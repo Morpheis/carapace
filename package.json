@@ -28,6 +28,8 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@netlify/functions": "^5.1.2"
+    "@netlify/functions": "^5.1.2",
+    "@supabase/supabase-js": "^2.93.3",
+    "openai": "^6.17.0"
   }
 }
