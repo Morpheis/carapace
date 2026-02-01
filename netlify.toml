@@ -1,6 +1,6 @@
 [build]
   publish = "site"
-  command = "npm run build"
+  command = "npm run build && cp skill/SKILL.md site/skill.md"
 
 [functions]
   directory = "netlify/functions"
