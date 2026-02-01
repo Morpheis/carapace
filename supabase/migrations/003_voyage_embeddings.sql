@@ -8,16 +8,20 @@
 -- Run the re-embedding script or manually update contributions.
 
 -- ── Update embedding column ──
+-- Existing OpenAI embeddings (1536d) are incompatible with Voyage (1024d)
+-- and live in a different embedding space anyway — must be re-generated.
 
 -- Drop the existing IVFFlat index (dimension-specific)
 drop index if exists contributions_embedding_idx;
 
--- Alter the column to new dimensions
-alter table contributions
-  alter column embedding type vector(1024)
-  using embedding::vector(1024);
+-- Drop and recreate column with new dimensions
+-- (pgvector cannot cast between different dimension sizes)
+alter table contributions drop column embedding;
+alter table contributions add column embedding vector(1024);
 
 -- Recreate the IVFFlat index for 1024 dimensions
+-- NOTE: IVFFlat requires rows to build centroids. If table is empty,
+-- index creation may warn but will still succeed.
 create index contributions_embedding_idx
   on contributions using ivfflat (embedding vector_cosine_ops)
   with (lists = 100);
