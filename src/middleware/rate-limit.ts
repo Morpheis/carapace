@@ -102,4 +102,10 @@ export const RATE_LIMITS = {
   embeddingBudget: { key: globalKey('embeddings'), limit: 500, windowSeconds: ONE_DAY },
   /** POST /feedback — feedback submission rate */
   feedback: { key: agentKey('feedback'), limit: 10, windowSeconds: ONE_HOUR },
+  /** POST /contributions/:id/validate — validation rate */
+  validate: { key: agentKey('validate'), limit: 60, windowSeconds: 60 },
+  /** POST /connections — connection creation rate */
+  createConnection: { key: agentKey('createConnection'), limit: 30, windowSeconds: 60 },
+  /** DELETE /connections/:id — connection deletion rate */
+  deleteConnection: { key: agentKey('deleteConnection'), limit: 30, windowSeconds: 60 },
 } as const satisfies Record<string, RateLimitConfig>;

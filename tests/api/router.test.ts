@@ -5,6 +5,8 @@ import { MockAgentRepository } from '../mocks/MockAgentRepository.js';
 import { MockContributionRepository } from '../mocks/MockContributionRepository.js';
 import { MockEmbeddingProvider } from '../mocks/MockEmbeddingProvider.js';
 import { MockFeedbackRepository } from '../mocks/MockFeedbackRepository.js';
+import { MockValidationRepository } from '../mocks/MockValidationRepository.js';
+import { MockConnectionRepository } from '../mocks/MockConnectionRepository.js';
 import { InMemoryRateLimitStore } from '../../src/stores/InMemoryRateLimitStore.js';
 import { InMemoryCounterStore } from '../../src/stores/InMemoryCounterStore.js';
 import { ConsoleLogProvider } from '../../src/providers/ConsoleLogProvider.js';
@@ -50,6 +52,8 @@ describe('API Router', () => {
       agentRepo: new MockAgentRepository(),
       contributionRepo: new MockContributionRepository(),
       feedbackRepo: new MockFeedbackRepository(),
+      validationRepo: new MockValidationRepository(),
+      connectionRepo: new MockConnectionRepository(),
       embeddingProvider: new MockEmbeddingProvider(),
       logProvider: new ConsoleLogProvider(),
       rateLimitStore: new InMemoryRateLimitStore(),
@@ -397,6 +401,156 @@ describe('API Router', () => {
       );
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  // ── Validation Endpoints ──
+
+  describe('POST /api/v1/contributions/:id/validate', () => {
+    it('should validate a contribution and return 200', async () => {
+      // Register a second agent to validate
+      const reg2 = await handle(
+        json(
+          { displayName: 'ValidatorAgent' },
+          { url: 'http://localhost/api/v1/agents' }
+        ),
+        ctx()
+      );
+      const reg2Body = await reg2.json() as any;
+      const validatorKey = reg2Body.apiKey;
+
+      // Create a contribution with first agent
+      const createRes = await handle(
+        json(
+          { claim: 'Validatable insight about knowledge bases', confidence: 0.8 },
+          { url: 'http://localhost/api/v1/contributions', apiKey }
+        ),
+        ctx()
+      );
+      const created = await createRes.json() as any;
+
+      // Validate with second agent
+      const res = await handle(
+        json(
+          { signal: 'confirmed', context: 'Looks correct' },
+          { url: `http://localhost/api/v1/contributions/${created.id}/validate`, apiKey: validatorKey }
+        ),
+        ctx()
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json() as any;
+      expect(body.signal).toBe('confirmed');
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await handle(
+        json(
+          { signal: 'confirmed' },
+          { url: 'http://localhost/api/v1/contributions/test-1/validate' }
+        ),
+        ctx()
+      );
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /api/v1/contributions/:id/validations', () => {
+    it('should return validations without auth', async () => {
+      // Create contribution
+      const createRes = await handle(
+        json(
+          { claim: 'Another insight to validate', confidence: 0.7 },
+          { url: 'http://localhost/api/v1/contributions', apiKey }
+        ),
+        ctx()
+      );
+      const created = await createRes.json() as any;
+
+      const res = await handle(
+        get(`http://localhost/api/v1/contributions/${created.id}/validations`),
+        ctx()
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json() as any;
+      expect(Array.isArray(body)).toBe(true);
+    });
+  });
+
+  // ── Connection Endpoints ──
+
+  describe('POST /api/v1/connections', () => {
+    it('should create a connection and return 201', async () => {
+      // Create two contributions
+      const c1 = await handle(
+        json(
+          { claim: 'Source claim about API design patterns', confidence: 0.8 },
+          { url: 'http://localhost/api/v1/contributions', apiKey }
+        ),
+        ctx()
+      );
+      const source = await c1.json() as any;
+
+      const c2 = await handle(
+        json(
+          { claim: 'Target claim about REST best practices', confidence: 0.7 },
+          { url: 'http://localhost/api/v1/contributions', apiKey }
+        ),
+        ctx()
+      );
+      const target = await c2.json() as any;
+
+      const res = await handle(
+        json(
+          { sourceId: source.id, targetId: target.id, relationship: 'builds-on' },
+          { url: 'http://localhost/api/v1/connections', apiKey }
+        ),
+        ctx()
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json() as any;
+      expect(body.relationship).toBe('builds-on');
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await handle(
+        json(
+          { sourceId: 'a', targetId: 'b', relationship: 'builds-on' },
+          { url: 'http://localhost/api/v1/connections' }
+        ),
+        ctx()
+      );
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /api/v1/contributions/:id/connections', () => {
+    it('should return connections without auth', async () => {
+      const res = await handle(
+        get('http://localhost/api/v1/contributions/test-1/connections'),
+        ctx()
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json() as any;
+      expect(Array.isArray(body)).toBe(true);
+    });
+  });
+
+  // ── Domain Endpoints ──
+
+  describe('GET /api/v1/domains', () => {
+    it('should return domain stats without auth', async () => {
+      const res = await handle(
+        get('http://localhost/api/v1/domains'),
+        ctx()
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json() as any;
+      expect(Array.isArray(body)).toBe(true);
     });
   });
 

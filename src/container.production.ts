@@ -11,6 +11,8 @@ import { VoyageEmbeddingProvider } from './providers/VoyageEmbeddingProvider.js'
 import { AxiomLogProvider } from './providers/AxiomLogProvider.js';
 import { ConsoleLogProvider } from './providers/ConsoleLogProvider.js';
 import { SupabaseFeedbackRepository } from './repositories/SupabaseFeedbackRepository.js';
+import { SupabaseValidationRepository } from './repositories/SupabaseValidationRepository.js';
+import { SupabaseConnectionRepository } from './repositories/SupabaseConnectionRepository.js';
 import { SupabaseRateLimitStore } from './stores/SupabaseRateLimitStore.js';
 import { SupabaseCounterStore } from './stores/SupabaseCounterStore.js';
 
@@ -43,6 +45,8 @@ export function getProductionContainer(): Container {
     agentRepo: new SupabaseAgentRepository(db),
     contributionRepo: new SupabaseContributionRepository(db),
     feedbackRepo: new SupabaseFeedbackRepository(db),
+    validationRepo: new SupabaseValidationRepository(db),
+    connectionRepo: new SupabaseConnectionRepository(db),
     embeddingProvider: new VoyageEmbeddingProvider(),
     logProvider,
     rateLimitStore: new SupabaseRateLimitStore(db),

@@ -11,6 +11,9 @@ import { createContributionHandlers } from './contributions.js';
 import { createQueryHandlers } from './query.js';
 import { createStatsHandlers } from './stats.js';
 import { createFeedbackHandlers } from './feedback.js';
+import { createValidationHandlers } from './validations.js';
+import { createConnectionHandlers } from './connections.js';
+import { createDomainHandlers } from './domains.js';
 
 interface Route {
   method: string;
@@ -24,6 +27,9 @@ export function createRouter(container: Container) {
   const query = createQueryHandlers(container);
   const stats = createStatsHandlers(container);
   const feedback = createFeedbackHandlers(container);
+  const validations = createValidationHandlers(container);
+  const connections = createConnectionHandlers(container);
+  const domains = createDomainHandlers(container);
 
   const routes: Route[] = [
     // Agents
@@ -44,6 +50,19 @@ export function createRouter(container: Container) {
 
     // Feedback
     { method: 'POST', pattern: /^\/api\/v1\/feedback\/?$/, handler: feedback.submit },
+
+    // Validations
+    { method: 'POST', pattern: /^\/api\/v1\/contributions\/[^/]+\/validate\/?$/, handler: validations.validate },
+    { method: 'GET', pattern: /^\/api\/v1\/contributions\/[^/]+\/validations\/?$/, handler: validations.getValidations },
+    { method: 'DELETE', pattern: /^\/api\/v1\/contributions\/[^/]+\/validate\/?$/, handler: validations.removeValidation },
+
+    // Connections
+    { method: 'POST', pattern: /^\/api\/v1\/connections\/?$/, handler: connections.create },
+    { method: 'GET', pattern: /^\/api\/v1\/contributions\/[^/]+\/connections\/?$/, handler: connections.getConnections },
+    { method: 'DELETE', pattern: /^\/api\/v1\/connections\/[^/]+\/?$/, handler: connections.delete },
+
+    // Domains
+    { method: 'GET', pattern: /^\/api\/v1\/domains\/?$/, handler: domains.getDomains },
   ];
 
   const handle: Handler = async (req: Request, ctx: HandlerContext) => {
