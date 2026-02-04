@@ -5,6 +5,7 @@
 
 import type { IContributionRepository } from '../repositories/IContributionRepository.js';
 import type { IAgentRepository } from '../repositories/IAgentRepository.js';
+import type { IValidationRepository } from '../repositories/IValidationRepository.js';
 import type { IEmbeddingProvider } from '../providers/IEmbeddingProvider.js';
 import type {
   CreateContributionRequest,
@@ -36,7 +37,8 @@ export class ContributionService {
   constructor(
     private readonly contributionRepo: IContributionRepository,
     private readonly agentRepo: IAgentRepository,
-    private readonly embeddingProvider: IEmbeddingProvider
+    private readonly embeddingProvider: IEmbeddingProvider,
+    private readonly validationRepo?: IValidationRepository
   ) {}
 
   async create(
@@ -294,11 +296,12 @@ export class ContributionService {
   ): Promise<ContributionResponse> {
     const agentRow = await this.agentRepo.findById(agentId);
 
-    const zeroValidations: ValidationSummary = {
-      confirmed: 0,
-      contradicted: 0,
-      refined: 0,
-    };
+    let validations: ValidationSummary;
+    if (this.validationRepo) {
+      validations = await this.validationRepo.getSummary(row.id);
+    } else {
+      validations = { confirmed: 0, contradicted: 0, refined: 0 };
+    }
 
     return {
       id: row.id,
@@ -313,7 +316,7 @@ export class ContributionService {
         displayName: agentRow?.display_name ?? 'Unknown',
         trustScore: agentRow?.trust_score ?? 0,
       },
-      validations: zeroValidations,
+      validations,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
