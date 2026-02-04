@@ -95,7 +95,16 @@ export class ContributionService {
       embedding: JSON.stringify(embedding),
     });
 
-    return this.rowToResponse(row, agentId);
+    const response = await this.rowToResponse(row, agentId);
+
+    // Proactive recommendations: find related insights
+    response.recommendations = await this.buildRecommendations(
+      embedding,
+      row.id,
+      input.domainTags ?? []
+    );
+
+    return response;
   }
 
   async getById(id: string): Promise<ContributionResponse> {
@@ -220,6 +229,76 @@ export class ContributionService {
   }
 
   // ── Private ──
+
+  /**
+   * Build proactive recommendations based on the new contribution's embedding.
+   * Returns related insights and cross-domain bridge opportunities.
+   */
+  private async buildRecommendations(
+    embedding: number[],
+    excludeId: string,
+    newDomainTags: string[]
+  ): Promise<ContributionResponse['recommendations']> {
+    const RELATED_THRESHOLD = 0.5;
+    const BRIDGE_THRESHOLD = 0.6;
+
+    // Find similar contributions (excluding the just-created one)
+    const similar = await this.contributionRepo.vectorSearch(embedding, {
+      maxResults: 5,
+      minConfidence: 0,
+    });
+
+    // Filter out the just-created contribution
+    const candidates = similar.filter((s) => s.id !== excludeId);
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    // Related: top 3 with similarity > threshold
+    const related = candidates
+      .filter((c) => c.similarity > RELATED_THRESHOLD)
+      .slice(0, 3)
+      .map((c) => ({
+        id: c.id,
+        claim: c.claim,
+        relevance: c.similarity,
+        domainTags: c.domain_tags,
+      }));
+
+    // Cross-domain bridges: different domains with high similarity
+    const crossDomainBridges: {
+      id: string;
+      claim: string;
+      relevance: number;
+      domain: string;
+    }[] = [];
+
+    for (const candidate of candidates) {
+      if (candidate.similarity <= BRIDGE_THRESHOLD) continue;
+
+      // Find domains in this candidate that aren't in the new contribution
+      const foreignDomains = candidate.domain_tags.filter(
+        (d) => !newDomainTags.includes(d)
+      );
+
+      for (const domain of foreignDomains) {
+        crossDomainBridges.push({
+          id: candidate.id,
+          claim: candidate.claim,
+          relevance: candidate.similarity,
+          domain,
+        });
+      }
+    }
+
+    // If nothing passed the thresholds, return null
+    if (related.length === 0 && crossDomainBridges.length === 0) {
+      return null;
+    }
+
+    return { related, crossDomainBridges };
+  }
 
   private validateContribution(
     input: Partial<CreateContributionRequest> & { claim: string; confidence: number }
