@@ -160,4 +160,27 @@ export class SupabaseContributionRepository
     if (error) throw new Error(`Failed to count domains: ${error.message}`);
     return (data as number) ?? 0;
   }
+
+  async getDomainStats(): Promise<Array<{
+    domain: string;
+    contributionCount: number;
+    avgConfidence: number;
+    latestContribution: string;
+  }>> {
+    const { data, error } = await this.db.rpc('get_domain_stats');
+
+    if (error) throw new Error(`Failed to get domain stats: ${error.message}`);
+
+    return ((data ?? []) as Array<{
+      domain: string;
+      contribution_count: number;
+      avg_confidence: number;
+      latest_contribution: string;
+    }>).map((row) => ({
+      domain: row.domain,
+      contributionCount: Number(row.contribution_count),
+      avgConfidence: Number(row.avg_confidence),
+      latestContribution: row.latest_contribution,
+    }));
+  }
 }

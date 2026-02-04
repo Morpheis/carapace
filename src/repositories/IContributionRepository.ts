@@ -44,4 +44,12 @@ export interface IContributionRepository {
 
   /** Number of unique domain tags across all contributions. */
   countDomains(): Promise<number>;
+
+  /** Get aggregated domain statistics across all contributions. */
+  getDomainStats(): Promise<Array<{
+    domain: string;
+    contributionCount: number;
+    avgConfidence: number;
+    latestContribution: string;
+  }>>;
 }

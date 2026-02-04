@@ -139,6 +139,43 @@ export class MockContributionRepository implements IContributionRepository {
     return domains.size;
   }
 
+  async getDomainStats(): Promise<Array<{
+    domain: string;
+    contributionCount: number;
+    avgConfidence: number;
+    latestContribution: string;
+  }>> {
+    const domainMap = new Map<string, { count: number; totalConfidence: number; latest: string }>();
+
+    for (const c of this.contributions.values()) {
+      for (const tag of c.domain_tags) {
+        const existing = domainMap.get(tag);
+        if (existing) {
+          existing.count++;
+          existing.totalConfidence += c.confidence;
+          if (c.created_at > existing.latest) {
+            existing.latest = c.created_at;
+          }
+        } else {
+          domainMap.set(tag, {
+            count: 1,
+            totalConfidence: c.confidence,
+            latest: c.created_at,
+          });
+        }
+      }
+    }
+
+    return [...domainMap.entries()]
+      .map(([domain, stats]) => ({
+        domain,
+        contributionCount: stats.count,
+        avgConfidence: stats.totalConfidence / stats.count,
+        latestContribution: stats.latest,
+      }))
+      .sort((a, b) => b.contributionCount - a.contributionCount);
+  }
+
   // ── Test Helpers ──
 
   clear(): void {
