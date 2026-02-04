@@ -145,6 +145,36 @@ export class SupabaseContributionRepository
     return (data ?? []) as ContributionRow[];
   }
 
+  async bm25Search(
+    query: string,
+    options: VectorSearchOptions
+  ): Promise<ScoredContributionRow[]> {
+    const { data, error } = await this.db.rpc('bm25_search', {
+      query_text: query,
+      match_count: options.maxResults,
+      min_confidence: options.minConfidence ?? 0,
+      filter_domain_tags: options.domainTags ?? [],
+    });
+
+    if (error)
+      throw new Error(`Failed to bm25 search contributions: ${error.message}`);
+
+    return ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+      id: row.id as string,
+      claim: row.claim as string,
+      reasoning: row.reasoning as string | null,
+      applicability: row.applicability as string | null,
+      limitations: row.limitations as string | null,
+      confidence: row.confidence as number,
+      domain_tags: row.domain_tags as string[],
+      agent_id: row.agent_id as string,
+      embedding: '',
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      similarity: row.rank as number,
+    }));
+  }
+
   async count(): Promise<number> {
     const { count, error } = await this.db
       .from('contributions')

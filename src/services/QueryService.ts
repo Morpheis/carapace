@@ -16,6 +16,12 @@ import type {
   ValidationSummary,
 } from '../types/api.js';
 import type { ScoredContributionRow } from '../types/database.js';
+import { expandQuery, EXPANSION_LENSES } from '../ideonomy/expansions.js';
+
+/** Internal type for tracking which lens found a result during expansion. */
+interface ScoredContributionRowWithLens extends ScoredContributionRow {
+  _expansionLens?: string;
+}
 
 const DEFAULT_MAX_RESULTS = 5;
 const MAX_MAX_RESULTS = 20;
@@ -33,20 +39,72 @@ export class QueryService {
       input.maxResults ?? DEFAULT_MAX_RESULTS,
       MAX_MAX_RESULTS
     );
+    const searchMode = input.searchMode ?? 'vector';
 
     // Build query embedding from question + context
     const queryText = this.buildQueryText(input.question, input.context);
     const embedding = await this.embeddingProvider.generate(queryText);
 
-    // Vector similarity search with filters
-    const scoredRows = await this.contributionRepo.vectorSearch(embedding, {
+    const searchOptions = {
       maxResults,
       minConfidence: input.minConfidence,
       domainTags: input.domainTags,
-    });
+    };
 
-    // Assemble full responses with contributor info
+    // Primary search based on mode
+    let scoredRows: ScoredContributionRow[];
+    if (searchMode === 'bm25') {
+      scoredRows = await this.contributionRepo.bm25Search(
+        input.question,
+        searchOptions
+      );
+    } else if (searchMode === 'hybrid') {
+      scoredRows = await this.hybridSearch(
+        embedding,
+        input.question,
+        searchOptions
+      );
+    } else {
+      scoredRows = await this.contributionRepo.vectorSearch(
+        embedding,
+        searchOptions
+      );
+    }
+
+    // Expansion if requested
+    let expansionsMeta:
+      | { lensesUsed: string[]; totalBeforeDedup: number }
+      | undefined;
+
+    if (input.expand) {
+      const expanded = await this.expandAndMerge(
+        input.question,
+        scoredRows,
+        searchOptions
+      );
+      scoredRows = expanded.merged;
+      expansionsMeta = {
+        lensesUsed: EXPANSION_LENSES.map((l) => l.division),
+        totalBeforeDedup: expanded.totalBeforeDedup,
+      };
+    }
+
+    // Limit to maxResults
+    scoredRows = scoredRows.slice(0, maxResults);
+
+    // Assemble full responses with contributor info + expansion lens tags
     const results = await this.assembleResults(scoredRows);
+
+    // Tag expansion lenses onto results
+    if (input.expand) {
+      for (const result of results) {
+        const row = scoredRows.find((r) => r.id === result.id);
+        if (row && (row as ScoredContributionRowWithLens)._expansionLens) {
+          result.expansionLens = (row as ScoredContributionRowWithLens)
+            ._expansionLens;
+        }
+      }
+    }
 
     // Extract related domains from results
     const relatedDomains = this.extractRelatedDomains(results);
@@ -55,12 +113,17 @@ export class QueryService {
     const valueSignal = this.computeValueSignal(results);
 
     // Determine trust level based on whether results have validations
-    const hasValidations = this.validationRepo && results.some(
-      (r) => r.validations.confirmed > 0 || r.validations.contradicted > 0 || r.validations.refined > 0
-    );
+    const hasValidations =
+      this.validationRepo &&
+      results.some(
+        (r) =>
+          r.validations.confirmed > 0 ||
+          r.validations.contradicted > 0 ||
+          r.validations.refined > 0
+      );
     const trustLevel = hasValidations ? 'validated' : 'unverified';
 
-    return {
+    const response: QueryResponse = {
       _meta: {
         source: 'carapace',
         trust: trustLevel,
@@ -73,9 +136,142 @@ export class QueryService {
       totalMatches: scoredRows.length,
       valueSignal,
     };
+
+    if (expansionsMeta) {
+      response.expansions = expansionsMeta;
+    }
+
+    return response;
   }
 
   // ── Private ──
+
+  /**
+   * Expand query through ideonomic lenses and merge with direct results.
+   * Deduplicates by contribution ID, keeping the highest relevance score.
+   */
+  private async expandAndMerge(
+    question: string,
+    directRows: ScoredContributionRow[],
+    options: { maxResults: number; minConfidence?: number; domainTags?: string[] }
+  ): Promise<{
+    merged: ScoredContributionRow[];
+    totalBeforeDedup: number;
+  }> {
+    const expandedQueries = expandQuery(question);
+
+    // Generate embeddings for all expansion queries
+    const expansionEmbeddings = await Promise.all(
+      expandedQueries.map((q) => this.embeddingProvider.generate(q))
+    );
+
+    // Run vector search for each expanded query
+    const expansionResults = await Promise.all(
+      expansionEmbeddings.map((emb) =>
+        this.contributionRepo.vectorSearch(emb, {
+          ...options,
+          maxResults: 3,
+        })
+      )
+    );
+
+    // Tag each expansion result with which lens found it
+    const taggedExpansionRows: ScoredContributionRowWithLens[] = [];
+    for (let i = 0; i < expansionResults.length; i++) {
+      for (const row of expansionResults[i]) {
+        taggedExpansionRows.push({
+          ...row,
+          _expansionLens: EXPANSION_LENSES[i].division,
+        });
+      }
+    }
+
+    const totalBeforeDedup =
+      directRows.length + taggedExpansionRows.length;
+
+    // Merge: direct results first, then expansion results
+    // Dedup by ID, keep highest relevance
+    const merged = new Map<string, ScoredContributionRowWithLens>();
+
+    for (const row of directRows) {
+      merged.set(row.id, { ...row, _expansionLens: undefined });
+    }
+
+    for (const row of taggedExpansionRows) {
+      const existing = merged.get(row.id);
+      if (!existing || row.similarity > existing.similarity) {
+        merged.set(row.id, row);
+      }
+    }
+
+    // Sort by relevance descending
+    const sortedResults = [...merged.values()].sort(
+      (a, b) => b.similarity - a.similarity
+    );
+
+    return { merged: sortedResults, totalBeforeDedup };
+  }
+
+  /**
+   * Hybrid search combining vector and BM25 with Reciprocal Rank Fusion (RRF).
+   */
+  private async hybridSearch(
+    embedding: number[],
+    question: string,
+    options: { maxResults: number; minConfidence?: number; domainTags?: string[] }
+  ): Promise<ScoredContributionRow[]> {
+    const [vectorResults, bm25Results] = await Promise.all([
+      this.contributionRepo.vectorSearch(embedding, options),
+      this.contributionRepo.bm25Search(question, options),
+    ]);
+
+    return this.reciprocalRankFusion(vectorResults, bm25Results, options.maxResults);
+  }
+
+  /**
+   * Reciprocal Rank Fusion (RRF) merging of two ranked result sets.
+   * RRF score = 1/(k + rank_vector) + 1/(k + rank_bm25), k=60
+   */
+  private reciprocalRankFusion(
+    vectorResults: ScoredContributionRow[],
+    bm25Results: ScoredContributionRow[],
+    maxResults: number
+  ): ScoredContributionRow[] {
+    const k = 60;
+
+    // Build rank maps (1-indexed)
+    const vectorRanks = new Map<string, number>();
+    vectorResults.forEach((r, i) => vectorRanks.set(r.id, i + 1));
+
+    const bm25Ranks = new Map<string, number>();
+    bm25Results.forEach((r, i) => bm25Ranks.set(r.id, i + 1));
+
+    // Collect all unique rows
+    const rowMap = new Map<string, ScoredContributionRow>();
+    for (const row of [...vectorResults, ...bm25Results]) {
+      if (!rowMap.has(row.id)) {
+        rowMap.set(row.id, row);
+      }
+    }
+
+    // Compute RRF scores
+    const scored: Array<{ row: ScoredContributionRow; rrfScore: number }> = [];
+    for (const [id, row] of rowMap) {
+      let rrfScore = 0;
+      const vRank = vectorRanks.get(id);
+      const bRank = bm25Ranks.get(id);
+      if (vRank !== undefined) rrfScore += 1 / (k + vRank);
+      if (bRank !== undefined) rrfScore += 1 / (k + bRank);
+
+      scored.push({ row: { ...row, similarity: rrfScore }, rrfScore });
+    }
+
+    // Sort by RRF score descending, limit
+    return scored
+      .sort((a, b) => b.rrfScore - a.rrfScore)
+      .slice(0, maxResults)
+      .map((s) => s.row);
+  }
 
   /**
    * Build text for query embedding.

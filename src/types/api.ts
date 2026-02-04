@@ -31,6 +31,8 @@ export interface QueryRequest {
   maxResults?: number;
   minConfidence?: number;
   domainTags?: string[];
+  expand?: boolean;
+  searchMode?: 'vector' | 'bm25' | 'hybrid';
 }
 
 export interface CreateAgentRequest {
@@ -76,10 +78,15 @@ export interface ContributionResponse {
   validations: ValidationSummary;
   createdAt: string;
   updatedAt: string;
+  recommendations?: {
+    related: { id: string; claim: string; relevance: number; domainTags: string[] }[];
+    crossDomainBridges: { id: string; claim: string; relevance: number; domain: string }[];
+  } | null;
 }
 
 export interface ScoredContribution extends ContributionResponse {
   relevance: number;
+  expansionLens?: string;
 }
 
 export type ValueSignalType =
@@ -105,6 +112,7 @@ export interface QueryResponse {
   relatedDomains: string[];
   totalMatches: number;
   valueSignal: ValueSignal | null;
+  expansions?: { lensesUsed: string[]; totalBeforeDedup: number } | null;
 }
 
 export interface CreateAgentResponse {

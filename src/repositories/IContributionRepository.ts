@@ -39,6 +39,12 @@ export interface IContributionRepository {
     threshold: number
   ): Promise<ContributionRow[]>;
 
+  /** BM25 full-text search. */
+  bm25Search(
+    query: string,
+    options: VectorSearchOptions
+  ): Promise<ScoredContributionRow[]>;
+
   /** Total number of contributions. */
   count(): Promise<number>;
 

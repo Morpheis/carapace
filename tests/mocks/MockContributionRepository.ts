@@ -125,6 +125,34 @@ export class MockContributionRepository implements IContributionRepository {
     });
   }
 
+  async bm25Search(
+    query: string,
+    options: VectorSearchOptions
+  ): Promise<ScoredContributionRow[]> {
+    const queryLower = query.toLowerCase();
+    let results = [...this.contributions.values()].filter((c) => {
+      const text = `${c.claim} ${c.reasoning ?? ''}`.toLowerCase();
+      return text.includes(queryLower) ||
+        queryLower.split(/\s+/).some((word) => text.includes(word));
+    });
+
+    // Apply confidence filter
+    if (options.minConfidence !== undefined) {
+      results = results.filter((c) => c.confidence >= options.minConfidence!);
+    }
+
+    // Apply domain tag filter
+    if (options.domainTags && options.domainTags.length > 0) {
+      results = results.filter((c) =>
+        options.domainTags!.some((tag) => c.domain_tags.includes(tag))
+      );
+    }
+
+    return results
+      .map((c) => ({ ...c, similarity: 0.5 }))
+      .slice(0, options.maxResults);
+  }
+
   async count(): Promise<number> {
     return this.contributions.size;
   }
