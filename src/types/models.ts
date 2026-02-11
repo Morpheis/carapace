@@ -25,6 +25,7 @@ export interface Agent {
   description: string | null;
   trustScore: number;
   createdAt: Date;
+  lastActiveAt: Date | null;
 }
 
 // ── Feedback ──

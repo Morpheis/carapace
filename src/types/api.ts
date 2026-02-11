@@ -129,6 +129,7 @@ export interface AgentProfileResponse {
   trustScore: number;
   contributionCount: number;
   joinedAt: string;
+  lastActiveAt: string | null;
 }
 
 // Phase 2

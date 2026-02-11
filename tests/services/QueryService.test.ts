@@ -12,7 +12,7 @@ describe('QueryService', () => {
   let agentRepo: MockAgentRepository;
   let embeddingProvider: MockEmbeddingProvider;
 
-  const testAgent: Omit<AgentRow, 'created_at'> = {
+  const testAgent: Omit<AgentRow, 'created_at' | 'last_active_at'> = {
     id: 'test-agent',
     api_key_hash: 'hash123',
     display_name: 'TestAgent',

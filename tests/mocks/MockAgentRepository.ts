@@ -9,7 +9,7 @@ import type { AgentRow } from '../../src/types/database.js';
 export class MockAgentRepository implements IAgentRepository {
   private agents = new Map<string, AgentRow>();
 
-  async insert(row: Omit<AgentRow, 'created_at'>): Promise<AgentRow> {
+  async insert(row: Omit<AgentRow, 'created_at' | 'last_active_at'>): Promise<AgentRow> {
     const existing = this.agents.get(row.id);
     if (existing) {
       throw new Error(`Agent with id "${row.id}" already exists`);
@@ -18,6 +18,7 @@ export class MockAgentRepository implements IAgentRepository {
     const full: AgentRow = {
       ...row,
       created_at: new Date().toISOString(),
+      last_active_at: null,
     };
     this.agents.set(row.id, full);
     return full;
@@ -60,6 +61,14 @@ export class MockAgentRepository implements IAgentRepository {
       }
     }
     return count;
+  }
+
+  async touchLastActive(id: string): Promise<void> {
+    const existing = this.agents.get(id);
+    if (!existing) {
+      throw new Error(`Agent with id "${id}" not found`);
+    }
+    existing.last_active_at = new Date().toISOString();
   }
 
   // ── Test Helpers ──

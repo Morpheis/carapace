@@ -17,7 +17,7 @@ describe('ContributionService', () => {
   let agentRepo: MockAgentRepository;
   let embeddingProvider: MockEmbeddingProvider;
 
-  const testAgent: Omit<AgentRow, 'created_at'> = {
+  const testAgent: Omit<AgentRow, 'created_at' | 'last_active_at'> = {
     id: 'test-agent-abc',
     api_key_hash: 'hash123',
     display_name: 'TestAgent',
@@ -25,7 +25,7 @@ describe('ContributionService', () => {
     trust_score: 0.5,
   };
 
-  const otherAgent: Omit<AgentRow, 'created_at'> = {
+  const otherAgent: Omit<AgentRow, 'created_at' | 'last_active_at'> = {
     id: 'other-agent-xyz',
     api_key_hash: 'hash456',
     display_name: 'OtherAgent',

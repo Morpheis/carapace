@@ -5,7 +5,7 @@
 import type { AgentRow } from '../types/database.js';
 
 export interface IAgentRepository {
-  insert(row: Omit<AgentRow, 'created_at'>): Promise<AgentRow>;
+  insert(row: Omit<AgentRow, 'created_at' | 'last_active_at'>): Promise<AgentRow>;
 
   findById(id: string): Promise<AgentRow | null>;
 
@@ -18,4 +18,7 @@ export interface IAgentRepository {
 
   /** Count agents whose ID starts with the given prefix, created within the last `windowSeconds`. */
   countRecentByPrefix(idPrefix: string, windowSeconds: number): Promise<number>;
+
+  /** Update last_active_at timestamp for an agent. */
+  touchLastActive(id: string): Promise<void>;
 }

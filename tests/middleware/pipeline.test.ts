@@ -78,6 +78,7 @@ describe('pipeline', () => {
         description: null,
         trustScore: 0.5,
         createdAt: new Date(),
+        lastActiveAt: null,
       };
       return next(req, ctx);
     };

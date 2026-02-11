@@ -27,6 +27,7 @@ describe('rate limit middleware', () => {
           description: null,
           trustScore: 0.5,
           createdAt: new Date(),
+          lastActiveAt: null,
         },
       };
     }

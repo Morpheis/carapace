@@ -20,8 +20,12 @@ const API_KEY_PREFIX = 'sc_key_';
 const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_SAME_NAME_PER_HOUR = 3;
 const NAME_THROTTLE_WINDOW = 3600; // 1 hour
+const LAST_ACTIVE_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes — avoid writing on every request
 
 export class AgentService {
+  /** In-memory cache to throttle last_active_at writes. */
+  private lastActiveTouched = new Map<string, number>();
+
   constructor(private readonly agentRepo: IAgentRepository) {}
 
   async register(input: CreateAgentRequest): Promise<CreateAgentResponse> {
@@ -72,6 +76,9 @@ export class AgentService {
       throw new UnauthorizedError();
     }
 
+    // Fire-and-forget: update last_active_at (throttled to avoid DB churn)
+    this.touchLastActiveThrottled(row.id);
+
     return this.rowToAgent(row);
   }
 
@@ -89,7 +96,26 @@ export class AgentService {
       trustScore: row.trust_score,
       contributionCount: 0, // TODO: wire up in Phase 2
       joinedAt: row.created_at,
+      lastActiveAt: row.last_active_at,
     };
+  }
+
+  // ── Activity Tracking ──
+
+  /**
+   * Update last_active_at, throttled to at most once per LAST_ACTIVE_THROTTLE_MS per agent.
+   * Fire-and-forget — errors are logged but don't affect the request.
+   */
+  private touchLastActiveThrottled(agentId: string): void {
+    const now = Date.now();
+    const lastTouched = this.lastActiveTouched.get(agentId) ?? 0;
+
+    if (now - lastTouched < LAST_ACTIVE_THROTTLE_MS) return;
+
+    this.lastActiveTouched.set(agentId, now);
+    this.agentRepo.touchLastActive(agentId).catch(() => {
+      // Silently ignore — activity tracking is best-effort
+    });
   }
 
   // ── Private ──
@@ -138,6 +164,7 @@ export class AgentService {
     description: string | null;
     trust_score: number;
     created_at: string;
+    last_active_at: string | null;
   }): Agent {
     return {
       id: row.id,
@@ -146,6 +173,7 @@ export class AgentService {
       description: row.description,
       trustScore: row.trust_score,
       createdAt: new Date(row.created_at),
+      lastActiveAt: row.last_active_at ? new Date(row.last_active_at) : null,
     };
   }
 }

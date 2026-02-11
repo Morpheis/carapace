@@ -163,5 +163,62 @@ describe('AgentService', () => {
         NotFoundError
       );
     });
+
+    it('should include lastActiveAt in profile', async () => {
+      const registered = await agentService.register({
+        displayName: 'TestAgent',
+      });
+
+      // Before any auth, lastActiveAt is null
+      const profileBefore = await agentService.getById(registered.id);
+      expect(profileBefore.lastActiveAt).toBeNull();
+
+      // Authenticate to trigger lastActive touch
+      await agentService.authenticate(registered.apiKey);
+
+      // Wait a tick for fire-and-forget to complete
+      await new Promise(r => setTimeout(r, 10));
+
+      const profileAfter = await agentService.getById(registered.id);
+      expect(profileAfter.lastActiveAt).toBeTruthy();
+    });
+  });
+
+  // ── lastActive tracking ──
+
+  describe('lastActive tracking', () => {
+    it('should update last_active_at on authenticate', async () => {
+      const registered = await agentService.register({
+        displayName: 'TestAgent',
+      });
+
+      const beforeAuth = await agentRepo.findById(registered.id);
+      expect(beforeAuth!.last_active_at).toBeNull();
+
+      await agentService.authenticate(registered.apiKey);
+      await new Promise(r => setTimeout(r, 10));
+
+      const afterAuth = await agentRepo.findById(registered.id);
+      expect(afterAuth!.last_active_at).toBeTruthy();
+    });
+
+    it('should throttle repeated last_active_at updates', async () => {
+      const registered = await agentService.register({
+        displayName: 'TestAgent',
+      });
+
+      await agentService.authenticate(registered.apiKey);
+      await new Promise(r => setTimeout(r, 10));
+
+      const afterFirst = await agentRepo.findById(registered.id);
+      const firstTimestamp = afterFirst!.last_active_at;
+
+      // Second auth immediately after — should be throttled (same timestamp)
+      await agentService.authenticate(registered.apiKey);
+      await new Promise(r => setTimeout(r, 10));
+
+      const afterSecond = await agentRepo.findById(registered.id);
+      expect(afterSecond!.last_active_at).toBe(firstTimestamp);
+    });
   });
 });

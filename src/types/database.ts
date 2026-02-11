@@ -31,6 +31,7 @@ export interface AgentRow {
   description: string | null;
   trust_score: number;
   created_at: string;
+  last_active_at: string | null;
 }
 
 // ── Phase 2 Tables ──
