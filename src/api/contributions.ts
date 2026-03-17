@@ -19,6 +19,7 @@ const createSchema: BodySchema = {
   limitations: { type: 'string', required: false, maxLength: 3000 },
   confidence: { type: 'number', required: true, min: 0, max: 1 },
   domainTags: { type: 'array', required: false },
+  provenance: { type: 'string', required: false, maxLength: 50 },
 };
 
 const updateSchema: BodySchema = {
@@ -28,6 +29,7 @@ const updateSchema: BodySchema = {
   limitations: { type: 'string', required: false, maxLength: 3000 },
   confidence: { type: 'number', required: false, min: 0, max: 1 },
   domainTags: { type: 'array', required: false },
+  provenance: { type: 'string', required: false, maxLength: 50 },
 };
 
 export function createContributionHandlers(container: Container) {
@@ -50,6 +52,7 @@ export function createContributionHandlers(container: Container) {
         limitations: body.limitations as string | undefined,
         confidence: body.confidence as number,
         domainTags: body.domainTags as string[] | undefined,
+        provenance: body.provenance as string | undefined,
       },
       ctx.agent!.id
     );
@@ -97,6 +100,7 @@ export function createContributionHandlers(container: Container) {
         limitations: body.limitations as string | undefined,
         confidence: body.confidence as number | undefined,
         domainTags: body.domainTags as string[] | undefined,
+        provenance: body.provenance as string | undefined,
       },
       ctx.agent!.id
     );

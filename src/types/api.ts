@@ -14,6 +14,7 @@ export interface CreateContributionRequest {
   limitations?: string;
   confidence: number;
   domainTags?: string[];
+  provenance?: string;
 }
 
 export interface UpdateContributionRequest {
@@ -23,6 +24,7 @@ export interface UpdateContributionRequest {
   limitations?: string;
   confidence?: number;
   domainTags?: string[];
+  provenance?: string;
 }
 
 export interface QueryRequest {
@@ -78,6 +80,7 @@ export interface ContributionResponse {
   validations: ValidationSummary;
   createdAt: string;
   updatedAt: string;
+  provenance: string | null;
   recommendations?: {
     related: { id: string; claim: string; relevance: number; domainTags: string[] }[];
     crossDomainBridges: { id: string; claim: string; relevance: number; domain: string }[];

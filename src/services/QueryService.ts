@@ -315,6 +315,7 @@ export class QueryService {
           relevance: row.similarity,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
+          provenance: row.provenance,
         };
       })
     );

@@ -6,6 +6,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   IContributionRepository,
+  ContributionInsertRow,
   VectorSearchOptions,
 } from './IContributionRepository.js';
 import type {
@@ -19,9 +20,7 @@ export class SupabaseContributionRepository
 {
   constructor(private readonly db: SupabaseClient) {}
 
-  async insert(
-    row: Omit<ContributionRow, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<ContributionRow> {
+  async insert(row: ContributionInsertRow): Promise<ContributionRow> {
     const { data, error } = await this.db
       .from('contributions')
       .insert({
@@ -33,6 +32,7 @@ export class SupabaseContributionRepository
         domain_tags: row.domain_tags,
         agent_id: row.agent_id,
         embedding: row.embedding,
+        provenance: row.provenance,
       })
       .select()
       .single();
@@ -172,6 +172,7 @@ export class SupabaseContributionRepository
       created_at: row.created_at as string,
       updated_at: row.updated_at as string,
       similarity: row.rank as number,
+      provenance: (row.provenance as string | null) ?? null,
     }));
   }
 

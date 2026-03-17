@@ -44,6 +44,7 @@ describe('QueryService', () => {
       domain_tags: overrides.domain_tags ?? [],
       agent_id: overrides.agent_id ?? testAgent.id,
       embedding: JSON.stringify(embedding),
+      provenance: overrides.provenance ?? null,
     });
   }
 

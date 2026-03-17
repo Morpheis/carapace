@@ -22,6 +22,7 @@ import {
   ValidationError,
 } from '../errors.js';
 import { ContentScanner } from './ContentScanner.js';
+import { CONTRIBUTION_PROVENANCE } from '../types/models.js';
 
 const MAX_CLAIM_LENGTH = 2000;
 const MAX_REASONING_LENGTH = 5000;
@@ -46,6 +47,7 @@ export class ContributionService {
     agentId: string
   ): Promise<ContributionResponse> {
     this.validateContribution(input);
+    this.validateProvenance(input.provenance);
 
     // Security: scan for prompt injection and malicious content
     const scanResult = this.scanner.scan({
@@ -93,6 +95,7 @@ export class ContributionService {
       domain_tags: input.domainTags ?? [],
       agent_id: agentId,
       embedding: JSON.stringify(embedding),
+      provenance: input.provenance ?? null,
     });
 
     const response = await this.rowToResponse(row, agentId);
@@ -139,6 +142,7 @@ export class ContributionService {
         limitations: input.limitations,
       });
     }
+    this.validateProvenance(input.provenance);
 
     // Security: scan updated fields for prompt injection
     const scanResult = this.scanner.scan({
@@ -171,6 +175,8 @@ export class ContributionService {
     if (input.confidence !== undefined) updateData.confidence = input.confidence;
     if (input.domainTags !== undefined)
       updateData.domain_tags = input.domainTags;
+    if (input.provenance !== undefined)
+      updateData.provenance = input.provenance;
 
     if (embeddingFieldsChanged) {
       const claim = input.claim ?? existing.claim;
@@ -353,6 +359,16 @@ export class ContributionService {
     }
   }
 
+  private validateProvenance(provenance?: string): void {
+    if (provenance !== undefined) {
+      if (!CONTRIBUTION_PROVENANCE.includes(provenance as typeof CONTRIBUTION_PROVENANCE[number])) {
+        throw new ValidationError(
+          `Invalid provenance: ${provenance}. Valid values: ${CONTRIBUTION_PROVENANCE.join(', ')}`
+        );
+      }
+    }
+  }
+
   /**
    * Build text for embedding generation.
    * Intentionally excludes `limitations` — it describes when the insight
@@ -398,6 +414,7 @@ export class ContributionService {
       validations,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      provenance: row.provenance,
     };
   }
 }

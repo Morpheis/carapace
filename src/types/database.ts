@@ -18,6 +18,7 @@ export interface ContributionRow {
   embedding: string; // pgvector serialized
   created_at: string;
   updated_at: string;
+  provenance: string | null;
 }
 
 export interface ScoredContributionRow extends ContributionRow {
