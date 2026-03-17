@@ -5,6 +5,7 @@
 
 import type {
   IContributionRepository,
+  ContributionInsertRow,
   VectorSearchOptions,
 } from '../../src/repositories/IContributionRepository.js';
 import type {
@@ -17,9 +18,7 @@ export class MockContributionRepository implements IContributionRepository {
   private contributions = new Map<string, ContributionRow>();
   private nextId = 1;
 
-  async insert(
-    row: Omit<ContributionRow, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<ContributionRow> {
+  async insert(row: ContributionInsertRow): Promise<ContributionRow> {
     const id = `test-${this.nextId++}`;
     const now = new Date().toISOString();
 
@@ -28,6 +27,7 @@ export class MockContributionRepository implements IContributionRepository {
       id,
       created_at: now,
       updated_at: now,
+      provenance: row.provenance ?? null,
     };
     this.contributions.set(id, full);
     return full;
@@ -149,7 +149,7 @@ export class MockContributionRepository implements IContributionRepository {
     }
 
     return results
-      .map((c) => ({ ...c, similarity: 0.5 }))
+      .map((c) => ({ ...c, similarity: 0.5, provenance: c.provenance ?? null }))
       .slice(0, options.maxResults);
   }
 

@@ -16,7 +16,11 @@ export interface Contribution {
   agentId: string;
   createdAt: Date;
   updatedAt: Date;
+  provenance: string | null;
 }
+
+export const CONTRIBUTION_PROVENANCE = ['directive', 'observation', 'social', 'correction', 'reflection', 'external'] as const;
+export type ContributionProvenance = typeof CONTRIBUTION_PROVENANCE[number];
 
 export interface Agent {
   id: string;

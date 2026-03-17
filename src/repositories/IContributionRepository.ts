@@ -11,10 +11,13 @@ export interface VectorSearchOptions {
   domainTags?: string[];
 }
 
+/** Insert payload — provenance is optional for backward compatibility. */
+export type ContributionInsertRow = Omit<ContributionRow, 'id' | 'created_at' | 'updated_at' | 'provenance'> & {
+  provenance?: string | null;
+};
+
 export interface IContributionRepository {
-  insert(
-    row: Omit<ContributionRow, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<ContributionRow>;
+  insert(row: ContributionInsertRow): Promise<ContributionRow>;
 
   findById(id: string): Promise<ContributionRow | null>;
 
